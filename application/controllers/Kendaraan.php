@@ -16,6 +16,11 @@ class Kendaraan extends REST_Controller
 
     public function index_get()
     {
+        $data = $this->verify_request();
+        // Send the return data as reponse
+        $status = parent::HTTP_OK;
+        $response = ['status' => $status, 'data' => $data];
+        $this->response($response, $status);
         return $this->returnData($this->db->get('vehicles')->result(), false);
     }
 
@@ -101,6 +106,35 @@ class Kendaraan extends REST_Controller
         $response['error'] = $error;
         $response['message'] = $msg;
         return $this->response($response);
+    }
+
+    private function verify_request()
+    {
+        // Get all the headers
+        $headers = $this->input->request_headers();
+        // Extract the token
+        $token = $headers['Authorization'];
+        // Use try-catch
+        // JWT library throws exception if the token is not valid
+        try {
+            // Validate the token
+            // Successfull validation will return the decoded user data else returns false
+            $data = AUTHORIZATION::validateToken($token);
+            if ($data === false) {
+                $status = parent::HTTP_UNAUTHORIZED;
+                $response = ['status' => $status, 'msg' => 'Unauthorized Access!'];
+                $this->response($response, $status);
+                exit();
+            } else {
+                return $data;
+            }
+        } catch (Exception $e) {
+            // Token is invalid
+            // Send the unathorized access message
+            $status = parent::HTTP_UNAUTHORIZED;
+            $response = ['status' => $status, 'msg' => 'Unauthorized Access! '];
+            $this->response($response, $status);
+        }
     }
 }
 class KendaraanData
